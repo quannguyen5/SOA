@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  parse-doc-service:
+    build: ./parse-doc-service
+    container_name: parse-doc-service
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./parse-doc-service/.env
+    networks:
+      - mcq-network
+    volumes:
+      - ./parse-doc-service:/app
+
+  react-agent-service:
+    build: ./react-agent-service
+    container_name: react-agent-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./react-agent-service/.env
+    networks:
+      - mcq-network
+    depends_on:
+      - parse-doc-service
+    environment:
+      - PARSE_DOC_SERVICE_URL=http://parse-doc-service:8000
+      - PROMPT_TEMPLATE_SERVICE_URL=http://prompt-template-service:8004
+      - FORMAT_SERVICE_URL=http://format-service:8005
+    volumes:
+      - ./react-agent-service:/app
+
+  prompt-template-service:
+    build: ./prompt-template-service
+    container_name: prompt-template-service
+    ports:
+      - "8004:8004"
+    networks:
+      - mcq-network
+    volumes:
+      - ./prompt-template-service:/app
+
+  format-service:
+    build: ./format-service
+    container_name: format-service
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./format-service/.env
+    networks:
+      - mcq-network
+    volumes:
+      - ./format-service:/app
+
+  mcq-gen-service:
+    build: ./mcq-gen-service
+    container_name: mcq-gen-service
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./mcq-gen-service/.env
+    networks:
+      - mcq-network
+    depends_on:
+      - parse-doc-service
+      - react-agent-service
+      - prompt-template-service
+      - format-service
+    environment:
+      - PARSE_DOC_SERVICE_URL=http://parse-doc-service:8000
+      - REACT_AGENT_SERVICE_URL=http://react-agent-service:8003
+      - PROMPT_TEMPLATE_SERVICE_URL=http://prompt-template-service:8004
+      - FORMAT_SERVICE_URL=http://format-service:8005
+    volumes:
+      - ./mcq-gen-service:/app
+
+networks:
+  mcq-network:
+    driver: bridge

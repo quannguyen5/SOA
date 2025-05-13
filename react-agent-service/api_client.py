@@ -1,6 +1,12 @@
 import requests
 import asyncio
+import os
 from typing import Any, Dict, Optional
+
+# Get service URLs from environment variables, with fallbacks to localhost
+PARSE_DOC_SERVICE_URL = os.environ.get('PARSE_DOC_SERVICE_URL', 'http://127.0.0.1:8000')
+PROMPT_TEMPLATE_SERVICE_URL = os.environ.get('PROMPT_TEMPLATE_SERVICE_URL', 'http://127.0.0.1:8004')
+FORMAT_SERVICE_URL = os.environ.get('FORMAT_SERVICE_URL', 'http://127.0.0.1:8005')
 
 async def run_in_executor(executor, func, *args, **kwargs):
     return await asyncio.get_event_loop().run_in_executor(executor, lambda: func(*args, **kwargs))
@@ -11,7 +17,7 @@ async def get_prompt_template(executor, type) -> Dict[str, Any]:
         prompt_template_response = await run_in_executor(
             executor,
             requests.get,
-            f'http://127.0.0.1:8004/get-prompt-{type}',
+            f'{PROMPT_TEMPLATE_SERVICE_URL}/get-prompt-{type}',
             timeout=1000.0
         )
         return prompt_template_response.json()
@@ -25,7 +31,7 @@ async def get_system_prompt(executor) -> Dict[str, Any]:
         system_prompt_response = await run_in_executor(
             executor,
             requests.get,
-            f'http://127.0.0.1:8004/get-system-prompt',
+            f'{PROMPT_TEMPLATE_SERVICE_URL}/get-system-prompt',
             timeout=1000.0
         )
         return system_prompt_response.json()
@@ -39,7 +45,7 @@ async def get_bloom(executor, type) -> Dict[str, Any]:
         bloom_response = await run_in_executor(
             executor,
             requests.get,
-            f'http://127.0.0.1:8004/get-bloom',
+            f'{PROMPT_TEMPLATE_SERVICE_URL}/get-bloom',
             params={"type": type},
             timeout=1000.0
         )
@@ -54,7 +60,7 @@ async def get_type_prompt_template(executor, question_type: str, number_of_answe
         type_prompt_response = await run_in_executor(
             executor,
             requests.get,
-            f'http://127.0.0.1:8004/get-prompt-{type}/{question_type}',
+            f'{PROMPT_TEMPLATE_SERVICE_URL}/get-prompt-{type}/{question_type}',
             params={"number_of_answers": number_of_answers},
             timeout=1000.0
         )
@@ -69,7 +75,7 @@ async def format_question(executor, question) -> Dict[str, Any]:
         format_question_response = await run_in_executor(
             executor,
             requests.post,
-            f'http://127.0.0.1:8005/format-mcq',
+            f'{FORMAT_SERVICE_URL}/format-mcq',
             params={"question": question},
             timeout=1000.0
         )
