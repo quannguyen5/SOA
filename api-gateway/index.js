@@ -53,7 +53,7 @@ app.post('/api/mcq', upload.single('file'), async (req, res) => {
       headers: {
         ...formData.getHeaders(),
       },
-      timeout: 60000 // 60 giây timeout
+      timeout: 120000
     });
 
     console.log('Response received from MCQ service');
