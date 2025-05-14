@@ -2,7 +2,8 @@
 import { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
 
 export const MainContent = () => {
-  const [selectedFileName, setSelectedFileName] = useState<string>("No file chosen");
+  const [selectedFileName, setSelectedFileName] =
+    useState<string>("No file chosen");
   const [inputText, setInputText] = useState<string>("");
   const [prevInputText, setPrevInputText] = useState<string>("");
   const [topic, setTopic] = useState<string>("");
@@ -16,7 +17,7 @@ export const MainContent = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<boolean>(false);
   const [questionType, setQuestionType] = useState<string>("SingleChoice");
-  const be_url = import.meta.env.VITE_BE_URL
+  const be_url = import.meta.env.VITE_BE_URL;
 
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -26,11 +27,13 @@ export const MainContent = () => {
 
   useEffect(() => {
     if (mcqResult.length > 0 && resultRef.current) {
-      resultRef.current.scrollIntoView({ behavior: 'smooth' });
+      resultRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [mcqResult]);
 
-  const handleFileInputChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
     const fileInput = event.target as HTMLInputElement;
     if (fileInput.files && fileInput.files.length > 0) {
       setStatus(true); // Set status to true if a file is selected
@@ -41,9 +44,8 @@ export const MainContent = () => {
     }
   };
 
+  // Điều chỉnh cấu trúc dữ liệu phản hồi từ API
   const handleFormSubmit = async (event: FormEvent) => {
-
-
     event.preventDefault();
     setLoading(true);
 
@@ -51,25 +53,25 @@ export const MainContent = () => {
     formData.append("topic", topic);
     formData.append("quantity", quantity.toString());
     formData.append("difficulty", difficulty);
-    formData.append("status", status.toString());
     formData.append("questionType", questionType);
     formData.append("numAnswer", numAnswer.toString());
     formData.append("isRecheck", isRecheck.toString());
 
     if (isFileUpload) {
-      const fileInput = document.getElementById("fileInput") as HTMLInputElement;
+      const fileInput = document.getElementById(
+        "fileInput"
+      ) as HTMLInputElement;
       if (fileInput?.files?.[0]) {
         formData.append("file", fileInput.files[0]);
       }
     } else {
       formData.append("inputText", inputText);
     }
-    // console.log("url: ", be_url)
 
     try {
       const response = await fetch(`${be_url}/api/mcq`, {
         method: "POST",
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
@@ -77,25 +79,50 @@ export const MainContent = () => {
       }
 
       const result = await response.json();
-      // console.log(typeof result.mcqs)
-      const mcqs = result.mcqs.map(item => {
-        const correctAnswers = item.answers
-          .filter(answer => answer.isCorrectAnswer === "true")
-          .map(answer => answer.answer);
 
-        return {
-          "question": item.question.replace(/\"/g, ""), // Loại bỏ dấu ngoặc kép thừa
-          "choices": item.answers.map(answer => answer.answer),
-          "correctAnswer": correctAnswers.join(" - ") // Kết hợp các đáp án đúng thành một chuỗi
-        };
-      });
-      // console.log("mcqs: ", mcqs)
-      setNotice(result.notify)
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      setNotice(result.notify || "Đã tạo thành công câu hỏi.");
+
+      // Chuyển đổi dữ liệu về định dạng hiển thị
+      const mcqs = Array.isArray(result.mcqs)
+        ? result.mcqs.map((item) => {
+            // Kiểm tra cấu trúc của item
+            if (!item || !item.answers) {
+              return {
+                question: "Có lỗi trong định dạng câu hỏi",
+                choices: ["Không thể hiển thị đáp án"],
+                correctAnswer: "Không có đáp án",
+              };
+            }
+
+            const correctAnswers = item.answers
+              .filter((answer) => answer.isCorrectAnswer === "true")
+              .map((answer) => answer.answer);
+
+            return {
+              question: item.question
+                ? item.question.replace(/\"/g, "")
+                : "Không có câu hỏi",
+              choices: item.answers.map((answer) => answer.answer),
+              correctAnswer: correctAnswers.join(" - "),
+            };
+          })
+        : [];
+
       setMcqResult(mcqs);
       setStatus(false);
-
     } catch (error) {
-      setMcqResult([{ error: (error as Error).message }]);
+      setMcqResult([
+        {
+          question: "Đã xảy ra lỗi",
+          choices: [(error as Error).message],
+          correctAnswer: "Vui lòng thử lại sau",
+        },
+      ]);
+      setNotice("Không thể tạo câu hỏi: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -183,7 +210,9 @@ export const MainContent = () => {
                 type="radio"
                 id="SingleChoice"
                 checked={questionType === "SingleChoice"}
-                onChange={() => { handleQuestionTypeChange("SingleChoice"), setNumAnswer(4) }}
+                onChange={() => {
+                  handleQuestionTypeChange("SingleChoice"), setNumAnswer(4);
+                }}
                 className="ml-4 mr-2"
               />
               <label htmlFor="SingleChoice" className="text-gray-700">
@@ -193,7 +222,9 @@ export const MainContent = () => {
                 type="radio"
                 id="MultipleChoice"
                 checked={questionType === "MultipleChoice"}
-                onChange={() => { handleQuestionTypeChange("MultipleChoice"), setNumAnswer(4) }}
+                onChange={() => {
+                  handleQuestionTypeChange("MultipleChoice"), setNumAnswer(4);
+                }}
                 className="ml-4 mr-2"
               />
               <label htmlFor="MultipleChoice" className="text-gray-700">
@@ -203,7 +234,9 @@ export const MainContent = () => {
                 type="radio"
                 id="TrueFalse"
                 checked={questionType === "TrueFalse"}
-                onChange={() => { handleQuestionTypeChange("TrueFalse"), setNumAnswer(2) }}
+                onChange={() => {
+                  handleQuestionTypeChange("TrueFalse"), setNumAnswer(2);
+                }}
                 className="ml-4 mr-2"
               />
               <label htmlFor="TrueFalse" className="text-gray-700">
@@ -313,7 +346,10 @@ export const MainContent = () => {
         )}
 
         {!loading && (
-          <div ref={resultRef} className="border border-gray-300 rounded-lg p-4 mt-6">
+          <div
+            ref={resultRef}
+            className="border border-gray-300 rounded-lg p-4 mt-6"
+          >
             <h2 className="text-lg font-medium mb-2">Results</h2>
             <p className="text-gray-600">
               <span className="font-medium">{notice}</span>
@@ -321,14 +357,17 @@ export const MainContent = () => {
             {mcqResult.length > 0 ? (
               mcqResult.map((mcq, index) => (
                 <div key={index} className="mb-4">
-                  <p className="font-medium">{index + 1}. {mcq.question}</p>
+                  <p className="font-medium">
+                    {index + 1}. {mcq.question}
+                  </p>
                   {mcq.choices.map((choice, idx) => (
                     <p key={idx} className="ml-4">
                       {choice}
                     </p>
                   ))}
                   <p className="text-gray-600">
-                    <span className="font-medium">Đáp án đúng:</span> {mcq.correctAnswer}
+                    <span className="font-medium">Đáp án đúng:</span>{" "}
+                    {mcq.correctAnswer}
                   </p>
                 </div>
               ))

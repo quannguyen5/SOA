@@ -2,7 +2,10 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install dependencies
+# Cài đặt python-multipart trước
+RUN pip install python-multipart
+
+# Cài đặt các dependencies khác
 RUN pip install --no-cache-dir fastapi uvicorn python-dotenv aiofiles requests
 
 # Copy service files

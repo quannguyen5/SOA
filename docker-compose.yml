@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   parse-doc-service:
     build: ./parse-doc-service
@@ -12,6 +10,26 @@ services:
       - mcq-network
     volumes:
       - ./parse-doc-service:/app
+
+  mcq-gen-service:
+    build: ./mcq-gen-service
+    container_name: mcq-gen-service
+    ports:
+      - "8001:8001"
+    networks:
+      - mcq-network
+    depends_on:
+      - parse-doc-service
+      - react-agent-service
+      - prompt-template-service
+      - format-service
+    environment:
+      - PARSE_DOC_SERVICE_URL=http://parse-doc-service:8000
+      - REACT_AGENT_SERVICE_URL=http://react-agent-service:8003
+      - PROMPT_TEMPLATE_SERVICE_URL=http://prompt-template-service:8004
+      - FORMAT_SERVICE_URL=http://format-service:8005
+    volumes:
+      - ./mcq-gen-service:/app
 
   react-agent-service:
     build: ./react-agent-service
@@ -52,29 +70,39 @@ services:
       - mcq-network
     volumes:
       - ./format-service:/app
-
-  mcq-gen-service:
-    build: ./mcq-gen-service
-    container_name: mcq-gen-service
+      
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
     ports:
-      - "8001:8001"
-    env_file:
-      - ./mcq-gen-service/.env
+      - "3000:3000"
     networks:
       - mcq-network
     depends_on:
       - parse-doc-service
+      - mcq-gen-service
       - react-agent-service
       - prompt-template-service
       - format-service
     environment:
-      - PARSE_DOC_SERVICE_URL=http://parse-doc-service:8000
-      - REACT_AGENT_SERVICE_URL=http://react-agent-service:8003
-      - PROMPT_TEMPLATE_SERVICE_URL=http://prompt-template-service:8004
-      - FORMAT_SERVICE_URL=http://format-service:8005
+      - MCQ_GEN_SERVICE_URL=http://mcq-gen-service:8001
     volumes:
-      - ./mcq-gen-service:/app
+      - ./api-gateway:/app
 
+  frontend:
+    build: ./FE
+    container_name: mcq-generator-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BE_URL=http://localhost:3000
+    networks:
+      - mcq-network
+    depends_on:
+      - api-gateway
+    volumes:
+      - ./FE:/app
+      - /app/node_modules
 networks:
   mcq-network:
     driver: bridge
