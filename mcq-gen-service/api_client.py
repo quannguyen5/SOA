@@ -37,7 +37,7 @@ async def create_vector_store(executor, store_id: str, content: str) -> Dict[str
             executor,
             requests.post,
             f'{REACT_AGENT_SERVICE_URL}/create-vector-store',
-            params={"store_id": store_id, "content": content},
+            json={"store_id": store_id, "content": content},
             timeout=1000.0
         )
         return vector_store_response.json()
